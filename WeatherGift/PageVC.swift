@@ -48,6 +48,7 @@ class PageVC: UIPageViewController {
         pageControl.currentPageIndicatorTintColor = UIColor.black
         pageControl.numberOfPages = locationsArray.count
         pageControl.currentPage = currentPage
+        pageControl.addTarget(self, action: #selector(pageControlPressed), for: .touchUpInside)
         view.addSubview(pageControl)
     }
     
@@ -60,8 +61,24 @@ class PageVC: UIPageViewController {
         view.addSubview(listButton)
     }
     
+    //MARK:- Segues
     @objc func segueToListVC() {
-        print("Hey! You Clicked Me!")
+        performSegue(withIdentifier: "ToListVC", sender: nil)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "ToListVC" {
+            let destination = segue.destination as! ListVC
+            destination.locationsArray = locationsArray
+            destination.currentPage = currentPage
+        }
+    }
+    
+    @IBAction func unwindFromListVC(sender: UIStoryboardSegue) {
+        pageControl.numberOfPages = locationsArray.count
+        pageControl.currentPage = currentPage
+        
+        setViewControllers([createDetailVC(forPage: currentPage)], direction: .forward, animated: false, completion: nil)
     }
     
     //MARK:- Create View Controller for UIPageViewController
@@ -72,8 +89,7 @@ class PageVC: UIPageViewController {
         detailVC.locationsArray = locationsArray
         return detailVC
     }
-
-
+    
 
 }
 
@@ -104,6 +120,17 @@ extension PageVC: UIPageViewControllerDelegate, UIPageViewControllerDataSource {
     func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
         if let currentViewController = pageViewController.viewControllers?[0] as? DetailVC {
             pageControl.currentPage = currentViewController.currentPage
+        }
+    }
+    
+    @objc func pageControlPressed() {
+        if let currentViewController = self.viewControllers?[0] as? DetailVC {
+            currentPage = currentViewController.currentPage
+            if pageControl.currentPage < currentPage {
+                setViewControllers([createDetailVC(forPage: pageControl.currentPage)], direction: .reverse, animated: true, completion: nil)
+            } else if pageControl.currentPage > currentPage {
+                setViewControllers([createDetailVC(forPage: pageControl.currentPage)], direction: .forward, animated: true, completion: nil)
+            }
         }
     }
     
