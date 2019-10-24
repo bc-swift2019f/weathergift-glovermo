@@ -11,6 +11,14 @@ import Alamofire
 import SwiftyJSON
 
 class WeatherLocation {
+    struct DailyForecast {
+        var dailyMaxTemp: Double
+        var dailyMinTemp: Double
+        var dailySummary: String
+        var dailyDate: Double
+        var dailyIcon: String
+    }
+    
     var name = ""
     var coordinates = ""
     var currentTemp = "--"
@@ -18,6 +26,8 @@ class WeatherLocation {
     var currentIcon = ""
     var currentTime = 0.0
     var timeZone = ""
+    
+    var dailyForecastArray = [DailyForecast]()
     
     func getWeather(completed: @escaping () -> ()) {
         let weatherURL = urlBase + urlAPIKey + coordinates
@@ -51,6 +61,17 @@ class WeatherLocation {
                     self.timeZone = timeZone
                 } else {
                     print("Could not return an icon")
+                }
+                let dailyDataArray = json["daily"]["data"]
+                self.dailyForecastArray = []
+                for day in 1...dailyDataArray.count-1 {
+                    let maxTemp = json["daily"]["data"][day]["temperatureHigh"].doubleValue
+                    let minTemp = json["daily"]["data"][day]["temperatureLow"].doubleValue
+                    let summary = json["daily"]["data"][day]["summary"].stringValue
+                    let date = json["daily"]["data"][day]["time"].doubleValue
+                    let icon = json["daily"]["data"][day]["icon"].stringValue
+                    let newDailyForecast = DailyForecast(dailyMaxTemp: maxTemp, dailyMinTemp: minTemp, dailySummary: summary, dailyDate: date, dailyIcon: icon)
+                    self.dailyForecastArray.append(newDailyForecast)
                 }
             case .failure(let error):
                 print(error)
