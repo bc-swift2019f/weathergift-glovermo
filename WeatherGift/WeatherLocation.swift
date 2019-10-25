@@ -19,6 +19,13 @@ class WeatherLocation {
         var dailyIcon: String
     }
     
+    struct HourlyForecast {
+        var hourlyTime: Double
+        var hourlyTemperature: Double
+        var hourlyPrecipProb: Double
+        var hourlyIcon: String
+    }
+    
     var name = ""
     var coordinates = ""
     var currentTemp = "--"
@@ -28,6 +35,7 @@ class WeatherLocation {
     var timeZone = ""
     
     var dailyForecastArray = [DailyForecast]()
+    var hourlyForecastArray = [HourlyForecast]()
     
     func getWeather(completed: @escaping () -> ()) {
         let weatherURL = urlBase + urlAPIKey + coordinates
@@ -35,6 +43,8 @@ class WeatherLocation {
             switch response.result {
             case .success(let value):
                 let json = JSON(value)
+                
+                // Data for summary view at top
                 if let temperature = json["currently"]["temperature"].double {
                     print("***** temperature inside getWeather = \(temperature)")
                     let roundedTemp = String(format: "%3.f", temperature)
@@ -62,9 +72,12 @@ class WeatherLocation {
                 } else {
                     print("Could not return an icon")
                 }
+                
+                // Data for daily TableView
                 let dailyDataArray = json["daily"]["data"]
                 self.dailyForecastArray = []
-                for day in 1...dailyDataArray.count-1 {
+                let days = min(7, dailyDataArray.count-1)
+                for day in 1...days {
                     let maxTemp = json["daily"]["data"][day]["temperatureHigh"].doubleValue
                     let minTemp = json["daily"]["data"][day]["temperatureLow"].doubleValue
                     let summary = json["daily"]["data"][day]["summary"].stringValue
@@ -72,6 +85,19 @@ class WeatherLocation {
                     let icon = json["daily"]["data"][day]["icon"].stringValue
                     let newDailyForecast = DailyForecast(dailyMaxTemp: maxTemp, dailyMinTemp: minTemp, dailySummary: summary, dailyDate: date, dailyIcon: icon)
                     self.dailyForecastArray.append(newDailyForecast)
+                }
+                
+                // Data for hourly CollectionView
+                let hourlyDataArray = json["hourly"]["data"]
+                self.hourlyForecastArray = []
+                let hours = min(24, hourlyDataArray.count-1)
+                for hour in 1...hours {
+                    let time = json["hourly"]["data"][hour]["time"].doubleValue
+                    let temperature = json["hourly"]["data"][hour]["temperature"].doubleValue
+                    let precipProb = json["hourly"]["data"][hour]["precipProbability"].doubleValue
+                    let icon = json["hourly"]["data"][hour]["icon"].stringValue
+                    let newHourlyForecast = HourlyForecast(hourlyTime: time, hourlyTemperature: temperature, hourlyPrecipProb: precipProb, hourlyIcon: icon)
+                    self.hourlyForecastArray.append(newHourlyForecast)
                 }
             case .failure(let error):
                 print(error)
